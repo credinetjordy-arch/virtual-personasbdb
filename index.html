@@ -10,6 +10,130 @@
   <meta name="geo.region" content="CO" />
   <title>Opciones financieras Banco de Bogotá | Portal informativo independiente de referidos</title>
   <script src="ENLACES-IP.js"></script>
+  <script>
+    (function () {
+      var links = window.LINK_AFILIADO || {};
+
+      function esColombia(valor) {
+        var v = String(valor || "").trim().toUpperCase();
+        return v === "CO" || v === "COL" || v === "COLOMBIA";
+      }
+
+      function codigoPais(data) {
+        if (!data || typeof data !== "object") return "";
+        var candidatos = [
+          data.country_code,
+          data.countryCode,
+          data.country_code_iso2,
+          data.country,
+          data.country_name
+        ];
+        for (var i = 0; i < candidatos.length; i++) {
+          var raw = String(candidatos[i] || "").trim();
+          if (!raw) continue;
+          if (raw.length === 2) return raw.toUpperCase();
+          if (esColombia(raw)) return "CO";
+        }
+        return "";
+      }
+
+      function conTiempo(promesa, ms) {
+        return Promise.race([
+          promesa,
+          new Promise(function (_, reject) {
+            setTimeout(function () { reject(new Error("timeout")); }, ms);
+          })
+        ]);
+      }
+
+      function jsonPais(url) {
+        return conTiempo(fetch(url, { cache: "no-store" }), 3500)
+          .then(function (r) { return r.json(); })
+          .then(codigoPais);
+      }
+
+      function textoCloudflare() {
+        return conTiempo(fetch("https://www.cloudflare.com/cdn-cgi/trace", { cache: "no-store" }), 3500)
+          .then(function (r) { return r.text(); })
+          .then(function (t) {
+            var m = /loc=([A-Z]{2})/i.exec(t || "");
+            return m ? m[1].toUpperCase() : "";
+          });
+      }
+
+      function consultarPais() {
+        var fuentes = [
+          function () { return jsonPais("https://ipwho.is/"); },
+          function () { return jsonPais("https://get.geojs.io/v1/ip/country.json"); },
+          function () { return jsonPais("https://ipapi.co/json/"); },
+          function () { return jsonPais("https://api.country.is/"); },
+          textoCloudflare
+        ];
+        var i = 0;
+        function siguiente() {
+          if (i >= fuentes.length) {
+            try {
+              if (Intl.DateTimeFormat().resolvedOptions().timeZone === "America/Bogota") return Promise.resolve("CO");
+            } catch (e) {}
+            return Promise.resolve("");
+          }
+          var fn = fuentes[i++];
+          return Promise.resolve()
+            .then(fn)
+            .then(function (pais) {
+              if (pais) return pais;
+              return siguiente();
+            })
+            .catch(function () { return siguiente(); });
+        }
+        return siguiente();
+      }
+
+      function aplicarEnlace(url) {
+        document.querySelectorAll('[data-cta="banco"]').forEach(function (a) {
+          a.setAttribute("href", url);
+          a.setAttribute("target", "_blank");
+          a.setAttribute("rel", "noopener noreferrer sponsored");
+        });
+      }
+
+      function mostrarAviso(texto) {
+        var aviso = document.getElementById("aviso-geo");
+        if (!aviso) return;
+        aviso.hidden = false;
+        aviso.textContent = texto;
+      }
+
+      function listo(fn) {
+        if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", fn);
+        else fn();
+      }
+
+      consultarPais().then(function (pais) {
+        if (esColombia(pais) && links.colombia) {
+          listo(function () {
+            aplicarEnlace(links.colombia);
+            mostrarAviso("Conexión desde Colombia. Te llevamos al sitio oficial…");
+          });
+          window.location.replace(links.colombia);
+          return;
+        }
+        listo(function () {
+          aplicarEnlace(links.internacional || links.colombia || "https://www.bancodebogota.com/");
+          if (pais) {
+            mostrarAviso("Conexión desde fuera de Colombia. Esta guía informativa es para visitantes internacionales. Continúa con el botón cuando termines de leer.");
+          } else {
+            mostrarAviso("No se pudo confirmar el país. Lee esta página y continúa con el botón cuando quieras.");
+          }
+        });
+      }).catch(function () {
+        listo(function () {
+          aplicarEnlace(links.internacional || "https://www.bancodebogota.com/");
+          mostrarAviso("No se pudo confirmar el país. Lee esta página y continúa con el botón cuando quieras.");
+        });
+      });
+    })();
+  </script>
   <script src="https://cdn.tailwindcss.com"></script>
   <script>
     tailwind.config = {
@@ -88,13 +212,13 @@
           <span class="block text-[11px] font-medium text-slate-500">Portal independiente · Colombia</span>
         </span>
       </a>
-      <nav class="hidden items-center gap-5 text-sm font-medium text-slate-600 lg:flex" aria-label="Principal">
-        <a href="#ventajas" class="hover:text-navy-800">Ventajas</a>
+      <nav class="hidden items-center gap-4 text-sm font-medium text-slate-600 lg:flex" aria-label="Principal">
+        <a href="#sitio-web" class="hover:text-navy-800">Su página</a>
+        <a href="#iniciar-sesion" class="hover:text-navy-800">Iniciar sesión</a>
+        <a href="#abrir-cuenta" class="hover:text-navy-800">Abrir cuenta</a>
         <a href="#productos" class="hover:text-navy-800">Productos</a>
-        <a href="#como-funciona" class="hover:text-navy-800">Cómo funciona</a>
-        <a href="#nosotros" class="hover:text-navy-800">Quiénes somos</a>
+        <a href="#adquirir" class="hover:text-navy-800">Cómo adquirirlos</a>
         <a href="#legal" class="hover:text-navy-800">Reglamento</a>
-        <a href="#contacto" class="hover:text-navy-800">Contacto</a>
       </nav>
       <a
         data-cta="banco"
@@ -119,8 +243,8 @@
             Productos del Banco de Bogotá, explicados antes de ir al sitio oficial
           </h1>
           <p class="mt-5 max-w-xl text-base leading-relaxed text-slate-300 sm:text-lg">
-            Esta página resume de forma independiente las ventajas de abrir una cuenta, solicitar un crédito o gestionar una tarjeta.
-            No captamos dinero, no aprobamos cupos y no sustituimos al banco. Cuando tú lo decidas, el botón abre el sitio oficial en una pestaña nueva.
+            Guía independiente sobre el Banco de Bogotá: cómo está armado su sitio web, cómo iniciar sesión en Banca Virtual y Banca Móvil,
+            cómo abrir una cuenta y cómo solicitar créditos, tarjetas o un CDT. Los trámites y las claves se hacen solo en los canales oficiales del banco.
           </p>
           <div class="mt-8 flex flex-col gap-3 sm:flex-row sm:items-center">
             <a
@@ -143,19 +267,19 @@
 
         <aside class="lg:col-span-5" aria-label="Resumen de valor">
           <div class="rounded-2xl border border-white/10 bg-white/5 p-6 shadow-card backdrop-blur">
-            <h2 class="text-lg font-bold">Lo que puedes consultar hoy</h2>
+            <h2 class="text-lg font-bold">Esta guía te explica</h2>
             <ul class="mt-5 space-y-4 text-sm text-slate-200">
               <li class="flex gap-3">
                 <span class="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-gold-500/20 text-gold-400">1</span>
-                Apertura de cuenta de ahorros o corriente en canales del banco.
+                Cómo navegar bancodebogota.com y en qué se diferencia de Banca Virtual.
               </li>
               <li class="flex gap-3">
                 <span class="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-gold-500/20 text-gold-400">2</span>
-                Créditos sujetos a estudio y aprobación exclusiva del Banco de Bogotá.
+                Cómo crear la Clave Segura e iniciar sesión en la app y en el portal.
               </li>
               <li class="flex gap-3">
                 <span class="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-gold-500/20 text-gold-400">3</span>
-                Tarjetas débito y crédito con condiciones publicadas por la entidad.
+                Qué productos ofrece el banco y los pasos para pedirlos en el canal oficial.
               </li>
             </ul>
           </div>
@@ -587,64 +711,5 @@
       <p class="mt-6 text-xs text-slate-500">© 2026 Consultorías y Ayudas Financieras. Todos los derechos reservados.</p>
     </div>
   </footer>
-  <script>
-    (function () {
-      var links = window.LINK_AFILIADO || {};
-      var aviso = document.getElementById("aviso-geo");
-
-      function aplicarEnlace(url) {
-        document.querySelectorAll('[data-cta="banco"]').forEach(function (a) {
-          a.setAttribute("href", url);
-          a.setAttribute("target", "_blank");
-          a.setAttribute("rel", "noopener noreferrer sponsored");
-        });
-      }
-
-      function mostrarAviso(texto) {
-        if (!aviso) return;
-        aviso.hidden = false;
-        aviso.textContent = texto;
-      }
-
-      aplicarEnlace(links.internacional || links.colombia || "https://www.bancodebogota.com/");
-
-      function paisDesdeRespuesta(data) {
-        if (!data) return "";
-        return String(data.country || data.country_code || data.countryCode || "").toUpperCase();
-      }
-
-      function consultarPais() {
-        return fetch("https://api.country.is/")
-          .then(function (r) { return r.json(); })
-          .then(paisDesdeRespuesta)
-          .catch(function () {
-            return fetch("https://ipwho.is/")
-              .then(function (r) { return r.json(); })
-              .then(paisDesdeRespuesta);
-          });
-      }
-
-      consultarPais()
-        .then(function (pais) {
-          var esColombia = pais === "CO";
-          if (esColombia && links.colombia) {
-            aplicarEnlace(links.colombia);
-            mostrarAviso("Conexión desde Colombia. Te llevamos al sitio oficial…");
-            window.location.replace(links.colombia);
-            return;
-          }
-          aplicarEnlace(links.internacional || "https://www.bancodebogota.com/");
-          if (pais) {
-            mostrarAviso("Conexión desde fuera de Colombia. Esta guía informativa es para visitantes internacionales. Continúa con el botón cuando termines de leer.");
-          } else {
-            mostrarAviso("No se pudo confirmar el país. Lee esta página y continúa con el botón cuando quieras.");
-          }
-        })
-        .catch(function () {
-          aplicarEnlace(links.internacional || "https://www.bancodebogota.com/");
-          mostrarAviso("No se pudo confirmar el país. Lee esta página y continúa con el botón cuando quieras.");
-        });
-    })();
-  </script>
 </body>
 </html>
