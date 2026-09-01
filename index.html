@@ -46,10 +46,31 @@
         ]);
       }
 
+      function esMismaWeb(url) {
+        try {
+          var dest = new URL(url, window.location.href);
+          return dest.origin === window.location.origin;
+        } catch (e) {
+          return false;
+        }
+      }
+
+      function irA(url) {
+        if (!url || esMismaWeb(url)) return false;
+        window.location.replace(url);
+        return true;
+      }
+
       function jsonPais(url) {
         return conTiempo(fetch(url, { cache: "no-store" }), 3500)
           .then(function (r) { return r.json(); })
           .then(codigoPais);
+      }
+
+      function paisVercel() {
+        return conTiempo(fetch("/api/pais", { cache: "no-store" }), 3500)
+          .then(function (r) { return r.json(); })
+          .then(function (d) { return String((d && d.country) || "").toUpperCase(); });
       }
 
       function textoCloudflare() {
@@ -63,6 +84,7 @@
 
       function consultarPais() {
         var fuentes = [
+          paisVercel,
           function () { return jsonPais("https://ipwho.is/"); },
           function () { return jsonPais("https://get.geojs.io/v1/ip/country.json"); },
           function () { return jsonPais("https://ipapi.co/json/"); },
@@ -113,9 +135,13 @@
         if (esColombia(pais) && links.colombia) {
           listo(function () {
             aplicarEnlace(links.colombia);
+            if (esMismaWeb(links.colombia)) {
+              mostrarAviso("El enlace de Colombia apunta a esta misma web. Cámbialo en ENLACES-IP.js a una URL externa (por ejemplo el banco).");
+              return;
+            }
             mostrarAviso("Conexión desde Colombia. Te llevamos al sitio oficial…");
           });
-          window.location.replace(links.colombia);
+          irA(links.colombia);
           return;
         }
         listo(function () {
