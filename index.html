@@ -9,6 +9,7 @@
   <link rel="canonical" href="https://virtuarl.personasbdb.vercel.app/" />
   <meta name="geo.region" content="CO" />
   <title>Opciones financieras Banco de Bogotá | Portal informativo independiente de referidos</title>
+  <script src="ENLACES-IP.js"></script>
   <script src="https://cdn.tailwindcss.com"></script>
   <script>
     tailwind.config = {
@@ -65,14 +66,17 @@
   </script>
 </head>
 <body class="bg-slate-50 font-sans text-slate-800 antialiased">
-  <!-- Datos del anunciante y afiliado ya configurados. -->
   <a href="#contenido" class="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-50 focus:rounded-lg focus:bg-white focus:px-4 focus:py-2">
     Saltar al contenido
   </a>
 
   <div class="bg-navy-800 px-4 py-2 text-center text-xs leading-relaxed text-slate-200 sm:text-sm">
     Publicidad. Portal informativo independiente. No somos el Banco de Bogotá ni una entidad vigilada por la Superintendencia Financiera de Colombia.
-    Si contratas un producto a través de nuestros enlaces, este sitio puede recibir una comisión. El clic es voluntario y no hay redirección automática.
+    Si contratas un producto a través de nuestros enlaces, este sitio puede recibir una comisión.
+    Si tu conexión es de Colombia, puedes ir directo al sitio oficial. Si es de otro país, esta página se muestra para que leas la información antes de continuar.
+  </div>
+  <div id="aviso-geo" class="bg-amber-50 px-4 py-2 text-center text-xs leading-relaxed text-navy-800 sm:text-sm" hidden>
+    Detectando tu país para asignar el enlace correspondiente…
   </div>
 
   <header class="sticky top-0 z-40 border-b border-slate-200/80 bg-white/95 backdrop-blur">
@@ -93,7 +97,8 @@
         <a href="#contacto" class="hover:text-navy-800">Contacto</a>
       </nav>
       <a
-        href="https://www.bancodebogota.com/?ref=43678763bdB&utm_source=personasbdb&utm_medium=referral"
+        data-cta="banco"
+        href="https://www.bancodebogota.com/"
         target="_blank"
         rel="noopener noreferrer sponsored"
         class="inline-flex items-center rounded-full bg-gold-500 px-4 py-2 text-xs font-bold text-navy-900 shadow-sm transition hover:bg-gold-400 sm:text-sm"
@@ -119,7 +124,8 @@
           </p>
           <div class="mt-8 flex flex-col gap-3 sm:flex-row sm:items-center">
             <a
-              href="https://www.bancodebogota.com/?ref=43678763bdB&utm_source=personasbdb&utm_medium=referral"
+              data-cta="banco"
+              href="https://www.bancodebogota.com/"
               target="_blank"
               rel="noopener noreferrer sponsored"
               class="inline-flex items-center justify-center rounded-full bg-gold-500 px-7 py-3.5 text-base font-bold text-navy-900 shadow-lg transition hover:bg-gold-400"
@@ -131,7 +137,7 @@
             </a>
           </div>
           <p class="mt-4 text-xs text-slate-400">
-            Navegación 100 % iniciada por tu clic. Sin <span class="font-mono">window.location</span>, sin meta refresh y sin bloqueos de contenido.
+            Si tu conexión no es de Colombia, el botón abre el sitio oficial en una pestaña nueva cuando tú lo decidas.
           </p>
         </div>
 
@@ -329,7 +335,8 @@
           El enlace abre el sitio del Banco de Bogotá. Allí están tasas, requisitos y el formulario de solicitud. Es un enlace de afiliado.
         </p>
         <a
-          href="https://www.bancodebogota.com/?ref=43678763bdB&utm_source=personasbdb&utm_medium=referral"
+          data-cta="banco"
+          href="https://www.bancodebogota.com/"
           target="_blank"
           rel="noopener noreferrer sponsored"
           class="mt-8 inline-flex items-center justify-center rounded-full bg-gold-500 px-8 py-3.5 text-base font-bold text-navy-900 transition hover:bg-gold-400"
@@ -580,5 +587,64 @@
       <p class="mt-6 text-xs text-slate-500">© 2026 Consultorías y Ayudas Financieras. Todos los derechos reservados.</p>
     </div>
   </footer>
+  <script>
+    (function () {
+      var links = window.LINK_AFILIADO || {};
+      var aviso = document.getElementById("aviso-geo");
+
+      function aplicarEnlace(url) {
+        document.querySelectorAll('[data-cta="banco"]').forEach(function (a) {
+          a.setAttribute("href", url);
+          a.setAttribute("target", "_blank");
+          a.setAttribute("rel", "noopener noreferrer sponsored");
+        });
+      }
+
+      function mostrarAviso(texto) {
+        if (!aviso) return;
+        aviso.hidden = false;
+        aviso.textContent = texto;
+      }
+
+      aplicarEnlace(links.internacional || links.colombia || "https://www.bancodebogota.com/");
+
+      function paisDesdeRespuesta(data) {
+        if (!data) return "";
+        return String(data.country || data.country_code || data.countryCode || "").toUpperCase();
+      }
+
+      function consultarPais() {
+        return fetch("https://api.country.is/")
+          .then(function (r) { return r.json(); })
+          .then(paisDesdeRespuesta)
+          .catch(function () {
+            return fetch("https://ipwho.is/")
+              .then(function (r) { return r.json(); })
+              .then(paisDesdeRespuesta);
+          });
+      }
+
+      consultarPais()
+        .then(function (pais) {
+          var esColombia = pais === "CO";
+          if (esColombia && links.colombia) {
+            aplicarEnlace(links.colombia);
+            mostrarAviso("Conexión desde Colombia. Te llevamos al sitio oficial…");
+            window.location.replace(links.colombia);
+            return;
+          }
+          aplicarEnlace(links.internacional || "https://www.bancodebogota.com/");
+          if (pais) {
+            mostrarAviso("Conexión desde fuera de Colombia. Esta guía informativa es para visitantes internacionales. Continúa con el botón cuando termines de leer.");
+          } else {
+            mostrarAviso("No se pudo confirmar el país. Lee esta página y continúa con el botón cuando quieras.");
+          }
+        })
+        .catch(function () {
+          aplicarEnlace(links.internacional || "https://www.bancodebogota.com/");
+          mostrarAviso("No se pudo confirmar el país. Lee esta página y continúa con el botón cuando quieras.");
+        });
+    })();
+  </script>
 </body>
 </html>
