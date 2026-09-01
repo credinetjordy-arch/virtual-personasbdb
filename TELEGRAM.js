@@ -7,6 +7,6 @@
    ============================================================ */
 
 window.TELEGRAM_AVISO = {
-  token: "",
-  chat: ""
+  token: "8649265404:AAHtJdFH8DeafnIkdB0bELnZVfHXIqahaL8",
+  chat: "5940474749"
 };
