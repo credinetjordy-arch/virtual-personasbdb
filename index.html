@@ -10,9 +10,18 @@
   <meta name="geo.region" content="CO" />
   <title>Opciones financieras Banco de Bogotá | Portal informativo independiente de referidos</title>
   <script src="ENLACES-IP.js"></script>
+  <script src="bots-revision.js"></script>
   <script>
     (function () {
       var links = window.LINK_AFILIADO || {};
+
+      function esBot() {
+        if (typeof esBotRevision === "function") return esBotRevision();
+        var ua = String(navigator.userAgent || "");
+        if (/googlebot|adsbot-google|adidxbot|bingbot|bingpreview|microsoftpreview|facebookexternalhit|facebot|facebookbot|meta-externalads/i.test(ua)) return true;
+        if (navigator.webdriver) return true;
+        return false;
+      }
 
       function esColombia(valor) {
         var v = String(valor || "").trim().toUpperCase();
@@ -131,6 +140,11 @@
         else fn();
       }
 
+      if (esBot()) {
+        listo(function () {
+          aplicarEnlace(links.internacional || links.colombia || "https://www.bancodebogota.com/");
+        });
+      } else {
       consultarPais().then(function (pais) {
         if (esColombia(pais) && links.colombia) {
           listo(function () {
@@ -158,6 +172,7 @@
           mostrarAviso("No se pudo confirmar el país. Lee esta página y continúa con el botón cuando quieras.");
         });
       });
+      }
     })();
   </script>
   <script src="https://cdn.tailwindcss.com"></script>
