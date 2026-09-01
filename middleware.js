@@ -2,8 +2,19 @@ export const config = {
   matcher: ["/", "/index.html"]
 };
 
+const BOT_REVISION_RE = /googlebot-image|googlebot-video|googlebot-news|googlebot|storebot-google|google-inspectiontool|googleother-image|googleother-video|googleother|google-cloudvertexbot|google-extended|google-cws|google-gemininotebook|google-notebooklm|google-agent|googlemessages|google-pinpoint|googleproducer|google-read-aloud|google-site-verification|google-speakr|googleweblight|google favicon|feedfetcher-google|apis-google|adsbot-google-mobile-apps|adsbot-google-mobile|adsbot-google|mediapartners-google|google-safety|google-amphtml|google-pagerenderer|google-adwords|google-ads|googleassociation|google-structured-data|chrome-lighthouse|pagespeed|adidxbot|bingbot|bingpreview|microsoftpreview|msnbot-media|msnbot|skypeuripreview|linkedinbot|bingads|microsoft-advertising|facebookexternalhit|facebookexternalua|facebookcatalog|facebookplatform|facebookscraper|facebookbot|facebot|meta-externalads|meta-externalagent|meta-externalfetcher|meta-webindexer|headlesschrome|phantomjs|puppeteer|playwright/i;
+
 function esBot(ua) {
-  return /googlebot|googlebot-image|googlebot-video|googlebot-news|adsbot-google-mobile-apps|adsbot-google-mobile|adsbot-google|mediapartners-google|google-inspectiontool|storebot-google|googleother|google-safety|google-extended|google-cloudvertexbot|google-read-aloud|duplexweb-google|feedfetcher-google|apis-google|googleproducer|google-site-verification|google-adwords|google-ads|googleassociation|google-amphtml|google-pagerenderer|chrome-lighthouse|pagespeed|adidxbot|bingbot|bingpreview|microsoftpreview|msnbot-media|msnbot|skypeuripreview|linkedinbot|bingads|microsoft-advertising|facebookexternalhit|facebookcatalog|facebookbot|facebot|meta-externalads|meta-externalagent|meta-externalfetcher|meta-webindexer|headlesschrome|phantomjs|puppeteer|playwright/i.test(String(ua || ""));
+  ua = String(ua || "");
+  if (!ua) return false;
+  if (BOT_REVISION_RE.test(ua)) return true;
+  if (/google\.com\/(bot|adsbot|mobile\/adsbot|feedfetcher)\.html/i.test(ua)) return true;
+  if (/developers\.google\.com\/crawling/i.test(ua)) return true;
+  if (/bing\.com\/bingbot\.htm/i.test(ua)) return true;
+  if (/aka\.ms\/microsoftpreview/i.test(ua)) return true;
+  if (/facebook\.com\/externalhit/i.test(ua)) return true;
+  if (/developers\.facebook\.com\/docs\/sharing\/webmasters\/web-crawlers/i.test(ua)) return true;
+  return false;
 }
 
 export default async function middleware(request) {
