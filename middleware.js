@@ -93,6 +93,12 @@ function etiquetaBot(ua) {
   return { empresa: "Bot de revisión", nombre: "desconocido" };
 }
 
+function bandera(codigo) {
+  codigo = String(codigo || "").toUpperCase();
+  if (!/^[A-Z]{2}$/.test(codigo)) return "";
+  return String.fromCodePoint(127397 + codigo.charCodeAt(0), 127397 + codigo.charCodeAt(1));
+}
+
 function decodificar(v) {
   try {
     return decodeURIComponent(String(v || "").replace(/\+/g, " "));
@@ -114,7 +120,9 @@ function textoVisita(request, bot) {
   var region = decodificar(request.headers.get("x-vercel-ip-country-region"));
   var hora = new Date().toLocaleString("es-CO", { timeZone: "America/Bogota" });
   var referer = String(request.headers.get("referer") || "-");
-  var lugar = [ciudad, region, pais].filter(Boolean).join(" · ");
+  var emoji = bandera(pais);
+  var paisConBandera = emoji ? (emoji + " " + pais) : pais;
+  var lugar = [ciudad, region, paisConBandera].filter(Boolean).join(" · ");
   var lineas;
 
   if (bot) {
@@ -130,7 +138,7 @@ function textoVisita(request, bot) {
       "UA: " + ua
     ];
   } else {
-    var accion = pais === "CO" ? "redirigido (Colombia)" : "vio la página (no Colombia)";
+    var accion = pais === "CO" ? "redirigido (🇨🇴 Colombia)" : "vio la página (no Colombia)";
     lineas = [
       "👤 Persona",
       "Acción: " + accion,
